@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             Int        @id @default(autoincrement())
+  username       String     @unique
+  hashedPassword String
+  favorites      Favorite[]
+}
+
+model Favorite {
+  id     Int    @id @default(autoincrement())
+  repoId Int
+  name   String
+  url    String
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+}
