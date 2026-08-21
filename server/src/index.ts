@@ -3,9 +3,27 @@ import bcrypt from "bcrypt"
 import cors from "cors"
 import dotenv from "dotenv"
 import { PrismaClient } from "@prisma/client"
+import jwt from 'jsonwebtoken'
 import type { Request, Response } from "express"
 dotenv.config()
 import type {User} from '@prisma/client'
+
+
+
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined")
+}
+
+const app = express()
+
+const prisma = new PrismaClient({
+  accelerateUrl: process.env.DATABASE_URL
+})
+app.use(cors())
+
+app.use(express.json())
+
 
 
 type RequestRegisterBody = {
@@ -13,15 +31,19 @@ type RequestRegisterBody = {
   password: string
 }
 
+type LoginRequestBody ={
+  username: string
+  password: string
+} 
 type RegisterResponse = Omit<User, "hashedPassword">
 
-const app = express()
-const prisma = new PrismaClient({
-  accelerateUrl: process.env.DATABASE_URL
-})
-app.use(cors())
+type LoginResponse = Omit<User,'hashedPassword'> & {token:string}
 
-app.use(express.json())
+type ErrorMessage = {
+  message: string
+}
+
+
 
 app.get("/", (req, res) => {
   res.send("Server running")
@@ -46,4 +68,34 @@ app.post("/auth/register", async (req:Request< {} ,RegisterResponse , RequestReg
 
 })
 
+
+app.post("/auth/login", async(req:Request<{}, LoginResponse, LoginRequestBody, {} >,res:Response<LoginResponse | ErrorMessage>) =>{
+
+  const {username, password} = req.body
+  const findUser = await prisma.user.findUnique({
+    where: {
+      username: username
+    }
+  })
+
+  if(!findUser){
+    return res.status(404).json({message: "No user found"})
+  }
+
+  const passwordMatch = await bcrypt.compare(password, findUser.hashedPassword)
+  if(!passwordMatch){
+    return res.status(401).json({message: "Incorrect password"})
+  }
+  const token = jwt.sign(
+    { userId: findUser.id },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  )
+
+  res.json({
+    username: findUser.username,
+    id: findUser.id,
+    token
+  })
+})
 app.listen(4000, () => console.log("Server on http://localhost:4000"))
