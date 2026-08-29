@@ -43,6 +43,9 @@ type ErrorMessage = {
   message: string
 }
 
+interface AuthRequest extends Request{
+  userId?: number;
+}
 
 
 app.get("/", (req, res) => {
@@ -101,7 +104,7 @@ app.post("/auth/login", async(req:Request<{}, LoginResponse | ErrorMessage, Logi
 })
 
 
-function authenticateToken(req:Request,res:Response,next:NextFunction){
+function authenticateToken(req:AuthRequest,res:Response,next:NextFunction){
   
   const authHeader = req.headers.authorization;
   if(!authHeader){
@@ -121,10 +124,37 @@ function authenticateToken(req:Request,res:Response,next:NextFunction){
 
         })
     }
+    req.userId = decoded.userId;
+
+    next()
 
   } catch(error){
+    return res.status(401).json({
+      message: "Invalid or expired token"
+    })
 
   }
 
 }
+
+
+app.get("/user/favorites", authenticateToken, async (req:AuthRequest, res) => {
+  if(!req.userId){
+    return res.status(401).json({message: "User id is not a number"})
+  }
+
+  const favorites = await prisma.favorite.findMany({
+    where: {
+      userId: req.userId
+    }
+  })
+  res.json(favorites);
+
+})
+
+
+
+
 app.listen(4000, () => console.log("Server on http://localhost:4000"))
+
+
