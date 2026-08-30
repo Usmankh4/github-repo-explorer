@@ -43,10 +43,15 @@ type ErrorMessage = {
   message: string
 }
 
-interface AuthRequest extends Request{
+interface AuthRequest<Tbody = unknown> extends Request<{},{}, Tbody, {}>{
   userId?: number;
 }
 
+type FavouriteRequestBody = {
+  repoId: number
+  name: string
+  url : string
+}
 
 app.get("/", (req, res) => {
   res.send("Server running")
@@ -137,23 +142,40 @@ function authenticateToken(req:AuthRequest,res:Response,next:NextFunction){
 
 }
 
-
 app.get("/user/favorites", authenticateToken, async (req:AuthRequest, res) => {
-  if(!req.userId){
+  if(req.userId=== undefined){
     return res.status(401).json({message: "User id is not a number"})
   }
 
-  const favorites = await prisma.favorite.findMany({
+  const favourites = await prisma.favorite.findMany({
     where: {
       userId: req.userId
     }
   })
-  res.json(favorites);
+  res.json(favourites);
 
 })
+app.post("/user/favorites", authenticateToken, async (req: AuthRequest<FavouriteRequestBody>, res:Response) => {
 
+  const {repoId, name, url} = req.body
+  if(req.userId === undefined){
+    return res.status(401).json({message: 
+      "User id is not a number"
+    })
+  }
 
+  const userFavourites = await prisma.favorite.create({
+    data:{
+      repoId: repoId,
+      name: name,
+      url: url,
+      userId: req.userId
+    }
 
+  })
+  res.json(userFavourites);
+
+})
 
 app.listen(4000, () => console.log("Server on http://localhost:4000"))
 
