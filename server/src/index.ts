@@ -43,7 +43,7 @@ type ErrorMessage = {
   message: string
 }
 
-interface AuthRequest<Tbody = unknown> extends Request<{},{}, Tbody, {}>{
+interface AuthRequest<Tbody = unknown, TParams = {}> extends Request<TParams,{}, Tbody, {}>{
   userId?: number;
 }
 
@@ -51,6 +51,10 @@ type FavouriteRequestBody = {
   repoId: number
   name: string
   url : string
+}
+
+type FavouriteParams = {
+  id:string
 }
 
 app.get("/", (req, res) => {
@@ -155,6 +159,7 @@ app.get("/user/favorites", authenticateToken, async (req:AuthRequest, res) => {
   res.json(favourites);
 
 })
+
 app.post("/user/favorites", authenticateToken, async (req: AuthRequest<FavouriteRequestBody>, res:Response) => {
 
   const {repoId, name, url} = req.body
@@ -176,6 +181,37 @@ app.post("/user/favorites", authenticateToken, async (req: AuthRequest<Favourite
   res.json(userFavourites);
 
 })
+
+app.delete("/user/favorites/:id", authenticateToken, async (req: AuthRequest<unknown, FavouriteParams>, res: Response) => {
+  const {id} = req.params;
+  const favoriteId = parseInt(id)
+  if(Number.isNaN(favoriteId)){
+    return res.status(400).json({message: "Favorite id must be a number"})
+  }
+  if(req.userId === undefined){
+    return res.status(401).json({
+      message: "User Id is undefined"
+    })
+  }
+  const findFavorite = await prisma.favorite.findFirst({
+    where: {
+      id: favoriteId,
+      userId: req.userId
+    }
+  })
+
+  if(!findFavorite){
+    return res.status(404).json({message: "Favourite not found"})
+  }
+
+  const deleteFavourite = await prisma.favorite.delete({
+    where: {
+      id: findFavorite.id
+    }
+  })
+  res.json(deleteFavourite)
+  }
+)
 
 app.listen(4000, () => console.log("Server on http://localhost:4000"))
 
