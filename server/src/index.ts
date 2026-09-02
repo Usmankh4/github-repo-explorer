@@ -58,7 +58,7 @@ type FavouriteParams = {
 }
 
 app.get("/", (req, res) => {
-  res.send("Server running")
+  res.send("Server is running")
 })
 
 app.post("/auth/register", async (req:Request< {} ,RegisterResponse , RegisterRequestBody, {}>, res:Response<RegisterResponse>) => {
