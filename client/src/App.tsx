@@ -56,6 +56,42 @@ function App() {
     }
   }
 
+  async function saveFavorite(repository: GitHubRepo) {
+    setError("")
+  
+    try {
+      if (!loginResponse) {
+        setError("Please login first")
+        return
+      }
+  
+      const response = await fetch(
+        "http://localhost:4000/user/favorites",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${loginResponse.token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            repoId: repository.id,
+            name: repository.name,
+            url: repository.html_url
+          })
+        }
+      )
+      if (!response.ok) {
+        throw new Error("Failed to save favorite")
+      }
+      const data: Favorite = await response.json()
+      setFavorites((currentFavorites) => [...currentFavorites, data])
+    }catch(error){
+      if(error instanceof Error){
+        setError(error.message)
+      }
+    }
+  }
+
   async function getFavorites() {
     setError("");
     try {
@@ -168,6 +204,7 @@ function App() {
         <h3>{repository.name} </h3>
         <p>{repository.description ?? "No description"}</p> <p>Langauge: {repository.language ?? "Not specified"}</p> 
         <p> Stars:{repository.stargazers_count} </p>
+        <button type='button' onClick={() => saveFavorite(repository)}> Save Favorites</button>
         </article>
       ))}
       <button type="button" onClick={getFavorites}>Get Favorites</button>
