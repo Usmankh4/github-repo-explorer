@@ -47,13 +47,13 @@ interface AuthRequest<Tbody = unknown, TParams = {}> extends Request<TParams,{},
   userId?: number;
 }
 
-type FavouriteRequestBody = {
+type FavoriteRequestBody = {
   repoId: number
   name: string
   url : string
 }
 
-type FavouriteParams = {
+type FavoriteParams = {
   id:string
 }
 
@@ -62,7 +62,6 @@ app.get("/", (req, res) => {
 })
 
 app.post("/auth/register", async (req:Request< {} ,RegisterResponse , RegisterRequestBody, {}>, res:Response<RegisterResponse>) => {
-
 
   const {username,password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -90,7 +89,6 @@ app.post("/auth/login", async(req:Request<{}, LoginResponse | ErrorMessage, Logi
       username: username
     }
   })
-
   if(!findUser){
     return res.status(404).json({message: "No user found"})
   }
@@ -143,7 +141,6 @@ function authenticateToken(req:AuthRequest,res:Response,next:NextFunction){
     })
 
   }
-
 }
 
 app.get("/user/favorites", authenticateToken, async (req:AuthRequest, res) => {
@@ -151,16 +148,16 @@ app.get("/user/favorites", authenticateToken, async (req:AuthRequest, res) => {
     return res.status(401).json({message: "User id is not a number"})
   }
 
-  const favourites = await prisma.favorite.findMany({
+  const favorites = await prisma.favorite.findMany({
     where: {
       userId: req.userId
     }
   })
-  res.json(favourites);
+  res.json(favorites);
 
 })
 
-app.post("/user/favorites", authenticateToken, async (req: AuthRequest<FavouriteRequestBody>, res:Response) => {
+app.post("/user/favorites", authenticateToken, async (req: AuthRequest<FavoriteRequestBody>, res:Response) => {
 
   const {repoId, name, url} = req.body
   if(req.userId === undefined){
@@ -169,7 +166,7 @@ app.post("/user/favorites", authenticateToken, async (req: AuthRequest<Favourite
     })
   }
 
-  const userFavourites = await prisma.favorite.create({
+  const userFavorites = await prisma.favorite.create({
     data:{
       repoId: repoId,
       name: name,
@@ -178,11 +175,11 @@ app.post("/user/favorites", authenticateToken, async (req: AuthRequest<Favourite
     }
 
   })
-  res.json(userFavourites);
+  res.json(userFavorites);
 
 })
 
-app.delete("/user/favorites/:id", authenticateToken, async (req: AuthRequest<unknown, FavouriteParams>, res: Response) => {
+app.delete("/user/favorites/:id", authenticateToken, async (req: AuthRequest<unknown, FavoriteParams>, res: Response) => {
   const {id} = req.params;
   const favoriteId = parseInt(id)
   if(Number.isNaN(favoriteId)){
@@ -201,15 +198,15 @@ app.delete("/user/favorites/:id", authenticateToken, async (req: AuthRequest<unk
   })
 
   if(!findFavorite){
-    return res.status(404).json({message: "Favourite not found"})
+    return res.status(404).json({message: "Favorite not found"})
   }
 
-  const deleteFavourite = await prisma.favorite.delete({
+  const deleteFavorite = await prisma.favorite.delete({
     where: {
       id: findFavorite.id
     }
   })
-  res.json(deleteFavourite)
+  res.json(deleteFavorite)
   }
 )
 

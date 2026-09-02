@@ -13,7 +13,7 @@ model User {
   favorites      Favorite[]
 }
 
-model Favourite {
+model Favorite {
   id     Int    @id @default(autoincrement())
   repoId Int
   name   String
