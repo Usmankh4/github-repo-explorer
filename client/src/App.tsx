@@ -92,20 +92,16 @@ function App() {
     }
   }
 
-  async function getFavorites() {
+  async function getFavorites(token: string) {
     setError("");
     try {
-      if (!loginResponse) {
-        setError("Please login first")
-        return
-      }
-  
+      
       const response = await fetch(
         "http://localhost:4000/user/favorites",
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${loginResponse.token}`
+            Authorization: `Bearer ${token}`
           }
         }
       )
@@ -169,6 +165,7 @@ function App() {
       }
       const data: LoginResponse = await response.json();
       setLoginResponse(data);
+      await getFavorites(data.token)
 
     }catch(error){
 
@@ -243,9 +240,7 @@ function App() {
         Save Favorites</button>
         </article>
       ))}
-      <button 
-      type="button" 
-      onClick={getFavorites}>Get Favorites</button>
+      
       
       
       {favorites.map((favorite) => (
