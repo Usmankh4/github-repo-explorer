@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.production
 
 # Build output
 dist/
@@ -22,6 +23,7 @@ yarn-error.log*
 Thumbs.db
 
 # Local editor / AI tooling
+.vercel/
 .agents/
 .claude/
 .windsurf/

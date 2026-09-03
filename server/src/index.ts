@@ -21,7 +21,9 @@ const app = express()
 const prisma = new PrismaClient({
   accelerateUrl: process.env.DATABASE_URL
 })
-app.use(cors())
+
+const frontendUrl = process.env.FRONTEND_URL
+app.use(cors(frontendUrl ? { origin: frontendUrl } : undefined))
 
 app.use(express.json())
 
@@ -210,6 +212,7 @@ app.delete("/user/favorites/:id", authenticateToken, async (req: AuthRequest<unk
   }
 )
 
-app.listen(4000, () => console.log("Server on http://localhost:4000"))
+const port = Number(process.env.PORT) || 4000
+app.listen(port, "0.0.0.0", () => console.log(`Server on port ${port}`))
 
 

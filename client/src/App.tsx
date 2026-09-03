@@ -23,6 +23,9 @@ type GitHubRepo = {
   html_url: string
   language: string | null
 }
+
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000"
+
 function App() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -66,7 +69,7 @@ function App() {
       }
   
       const response = await fetch(
-        "http://localhost:4000/user/favorites",
+        `${API_URL}/user/favorites`,
         {
           method: "POST",
           headers: {
@@ -97,7 +100,7 @@ function App() {
     try {
       
       const response = await fetch(
-        "http://localhost:4000/user/favorites",
+        `${API_URL}/user/favorites`,
         {
           method: "GET",
           headers: {
@@ -125,7 +128,7 @@ function App() {
       return
     }
     try{
-      const response = await fetch(`http://localhost:4000/user/favorites/${id}`,{
+      const response = await fetch(`${API_URL}/user/favorites/${id}`,{
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${loginResponse.token}`
@@ -150,7 +153,7 @@ function App() {
     setError("");
 
     try{
-      const response = await fetch("http://localhost:4000/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-type": "application/json"

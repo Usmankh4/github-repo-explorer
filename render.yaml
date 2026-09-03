@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: github-repo-explorer-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
+    preDeployCommand: npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        value: https://github-repo-explorer-uzi7s-projects.vercel.app
