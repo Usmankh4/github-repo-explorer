@@ -122,6 +122,33 @@ function App() {
     }
   }
 
+  async function deleteFavorite(id: number){
+    setError("");
+    if(!loginResponse){
+      setError("Please login first")
+      return
+    }
+    try{
+      const response = await fetch(`http://localhost:4000/user/favorites/${id}`,{
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${loginResponse.token}`
+        }
+      })
+      if(!response.ok){
+        throw new Error("Failed to delete favorite")
+      }
+      
+      setFavorites((currentFavorites) => currentFavorites.filter((favorite) => favorite.id !== id))
+
+    } catch(error){
+      if(error instanceof Error){
+        setError(error.message)
+      }
+
+    }
+  }
+
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError("");
@@ -200,16 +227,32 @@ function App() {
 
       {repositories.map((repository)=>(
         <article key={repository.id}> 
+        
         <a href={repository.html_url} target="_blank" rel="noreferrer"> View Repository </a>
+        
         <h3>{repository.name} </h3>
-        <p>{repository.description ?? "No description"}</p> <p>Langauge: {repository.language ?? "Not specified"}</p> 
+        
+        <p>{repository.description ?? "No description"}</p> 
+        
+        <p>Langauge: {repository.language ?? "Not specified"}</p> 
+        
         <p> Stars:{repository.stargazers_count} </p>
-        <button type='button' onClick={() => saveFavorite(repository)}> Save Favorites</button>
+        <button 
+        type='button' 
+        onClick={() => saveFavorite(repository)}> 
+        Save Favorites</button>
         </article>
       ))}
-      <button type="button" onClick={getFavorites}>Get Favorites</button>
+      <button 
+      type="button" 
+      onClick={getFavorites}>Get Favorites</button>
+      
+      
       {favorites.map((favorite) => (
-        <p key={favorite.id}>{favorite.name}</p>
+        <article key={favorite.id}>
+          <p>{favorite.name}</p>
+          <button type="button" onClick={() => deleteFavorite(favorite.id)}>Delete</button>
+        </article>
       ))}
     </section>
   )
