@@ -11,3 +11,24 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id             Int        @id @default(autoincrement())
+  username       String     @unique
+  hashedPassword String
+  favorites      Favorite[]
+}
+
+model Favorite {
+  id          Int     @id @default(autoincrement())
+  repoId      String
+  name        String
+  description String?
+  starCount   Int
+  url         String
+  language    String?
+  userId      Int
+  user        User    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, repoId])
+}
