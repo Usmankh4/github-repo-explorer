@@ -28,8 +28,16 @@ function isSuccessfulRegistrationResponse(data: unknown): data is SuccessfulRegi
     );
   }
 
+function getApiBaseUrl(): string {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    if (!apiBaseUrl) {
+        throw new Error("Missing required configuration: VITE_API_BASE_URL");
+    }
+    return apiBaseUrl.replace(/\/$/, "");
+}
+
 export async function registerUser(registration: RegistrationRequest): Promise<SuccessfulRegistrationResponse>{
-    const response = await fetch("http://localhost:4000/auth/register",{
+    const response = await fetch(`${getApiBaseUrl()}/auth/register`,{
         method: "POST",
         headers: {
             "Content-Type": "application/json"

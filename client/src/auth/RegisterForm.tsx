@@ -26,7 +26,7 @@ function RegisterForm() {
       const user = await registerUser({ username, password });
       setRegistrationSubmissionState({ status: "success", user });
       setPassword("");
-    } catch (err) {
+    } catch (err: unknown) {
       setRegistrationSubmissionState({
         status: "error",
         message: err instanceof Error ? err.message : "Something went wrong",
@@ -37,11 +37,12 @@ function RegisterForm() {
   return (
     <section>
       <h2>Create Account</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} aria-busy={isSubmitting}>
         <label htmlFor="username">Username</label>
         <input
           value={username}
           required
+          disabled={isSubmitting}
           autoComplete="username"
           id="username"
           name="username"
@@ -54,6 +55,7 @@ function RegisterForm() {
           required
           value={password}
           minLength={8}
+          disabled={isSubmitting}
           autoComplete="new-password"
           id="password"
           name="password"
@@ -66,15 +68,17 @@ function RegisterForm() {
         </button>
       </form>
 
-      {registrationSubmissionState.status === "error" && (
-        <p role="alert">{registrationSubmissionState.message}</p>
-      )}
+      <div role="alert">
+        {registrationSubmissionState.status === "error" && (
+          <p>{registrationSubmissionState.message}</p>
+        )}
+      </div>
 
-      {registrationSubmissionState.status === "success" && (
-        <p role="status">
-          Account created for {registrationSubmissionState.user.username}
-        </p>
-      )}
+      <div role="status">
+        {registrationSubmissionState.status === "success" && (
+          <p>Account created for {registrationSubmissionState.user.username}</p>
+        )}
+      </div>
     </section>
   );
 }
