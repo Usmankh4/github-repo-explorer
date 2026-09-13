@@ -2,7 +2,15 @@ import { Router } from "express";
 import {prisma} from "../db.js"
 import bcrypt from 'bcrypt';
 import { Prisma } from "../generated/prisma/client.js";
+import jwt from "jsonwebtoken"
+
 const authRouter = Router();
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if(!JWT_SECRET){
+    throw new Error("Missing required environment variable: JWT_SECRET");
+}
 
 authRouter.post("/register", async (req,res) => {
 
@@ -49,5 +57,56 @@ authRouter.post("/register", async (req,res) => {
 
 })
 
+
+authRouter.post("/login", async (req,res) =>{
+
+    const body: unknown = req.body;
+
+    if(typeof body !== "object" || body === null || Array.isArray(body)){
+        return res.status(400).json({message: "Invalid username or password"})
+    }
+    if(!("username" in body) || !("password" in body) || typeof body.username !== "string" || typeof body.password !== "string" ){
+        return res.status(400).json({message: "Invalid username or password"})
+    }
+
+    const username = body.username.trim();
+    const password = body.password;
+
+    if(username.length === 0 || password.length < 8){
+        return res.status(400).json({message: "Invalid username or password"});
+    }
+
+    const user = await prisma.user.findUnique({
+        where: {
+            username: username,
+        },
+        select: {
+            id: true,
+            username: true,
+            hashedPassword: true,
+        }
+    })
+    if(user === null){
+        return res.status(401).json({message: "Invalid username or password"})
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, user.hashedPassword);
+    if(!isPasswordCorrect){
+        return res.status(401).json({message: "Invalid username or password"})
+    }
+
+    const token = jwt.sign({
+    userId: user.id
+    }, JWT_SECRET, {expiresIn: "1h"})
+
+    return res.status(200).json(
+        {
+            id: user.id,
+            username: user.username,
+            token
+        }
+    )
+
+})
 
 export {authRouter}
