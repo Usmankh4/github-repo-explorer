@@ -19,7 +19,6 @@ function RegisterForm() {
     event.preventDefault();
 
     if (isSubmitting) return;
-
     setRegistrationSubmissionState({ status: "submitting" });
 
     try {
