@@ -3,14 +3,10 @@ import {prisma} from "../db.js"
 import bcrypt from 'bcrypt';
 import { Prisma } from "../generated/prisma/client.js";
 import jwt from "jsonwebtoken"
-
+import { env } from "../config/env.js";
 const authRouter = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET;
 
-if(!JWT_SECRET){
-    throw new Error("Missing required environment variable: JWT_SECRET");
-}
 
 authRouter.post("/register", async (req,res) => {
 
@@ -97,7 +93,7 @@ authRouter.post("/login", async (req,res) =>{
 
     const token = jwt.sign({
     userId: user.id
-    }, JWT_SECRET, {expiresIn: "1h"})
+    }, env.jwtSecret, {expiresIn: "1h"})
 
     return res.status(200).json(
         {
