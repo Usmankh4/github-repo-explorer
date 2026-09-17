@@ -1,3 +1,4 @@
+import getApiBaseUrl from "../../lib/apiBaseUrl"
 export type RegistrationRequest = {
     username: string
     password: string
@@ -49,13 +50,7 @@ function isSuccessfulRegistrationResponse(data: unknown): data is SuccessfulRegi
     );
   }
 
-function getApiBaseUrl(): string {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-    if (!apiBaseUrl) {
-        throw new Error("Missing required configuration: VITE_API_BASE_URL");
-    }
-    return apiBaseUrl.replace(/\/$/, "");
-}
+
 
 export async function loginUser(login: LoginRequest): Promise<SuccessfulLoginResponse>{
     const response = await fetch(`${getApiBaseUrl()}/auth/login`,{

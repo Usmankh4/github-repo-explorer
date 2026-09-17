@@ -24,6 +24,7 @@ function RegisterForm() {
     try {
       const user = await registerUser({ username, password });
       setRegistrationSubmissionState({ status: "success", user });
+      setUsername("");
       setPassword("");
     } catch (err: unknown) {
       setRegistrationSubmissionState({

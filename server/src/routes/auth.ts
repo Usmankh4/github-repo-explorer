@@ -49,8 +49,6 @@ authRouter.post("/register", async (req,res) => {
     throw error;
    }
 
-
-
 })
 
 

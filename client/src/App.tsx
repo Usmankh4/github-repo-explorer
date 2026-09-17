@@ -16,20 +16,13 @@ type FavoritesState =
   | { status: "error"; message: string };
 
 export default function App() {
-  const [session, setSession] =
-    useState<SuccessfulLoginResponse | null>(null);
+  const [session, setSession] = useState<SuccessfulLoginResponse | null>(null);
 
-  const [favoritesState, setFavoritesState] = useState<FavoritesState>({
-    status: "idle",
-  });
+  const [favoritesState, setFavoritesState] = useState<FavoritesState>({status: "idle",});
 
-  const [deletingFavoriteId, setDeletingFavoriteId] = useState<number | null>(
-    null,
-  );
+  const [deletingFavoriteId, setDeletingFavoriteId] = useState<number | null>(null);
 
-  const [favoriteActionError, setFavoriteActionError] = useState<string | null>(
-    null,
-  );
+  const [favoriteActionError, setFavoriteActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (session === null) {
