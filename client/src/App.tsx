@@ -3,25 +3,17 @@ import { useEffect, useState } from "react";
 import LoginForm from "./auth/LoginForm";
 import RegisterForm from "./auth/RegisterForm";
 import type { SuccessfulLoginResponse } from "./features/auth/authApi";
-import {
-  deleteFavorite,
-  getFavorites,
-  type Favorite,
-} from "./features/favorites/favoritesApi";
+import {deleteFavorite, getFavorites, type Favorite } from "./features/favorites/favoritesApi";
+import RepositorySearch from "./features/github/RepositorySearch";
 
-type FavoritesState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "success"; favorites: Favorite[] }
-  | { status: "error"; message: string };
+type FavoritesState = | { status: "idle" } | { status: "loading" } | { status: "success"; favorites: Favorite[] } | { status: "error"; message: string };
 
 export default function App() {
+
+
   const [session, setSession] = useState<SuccessfulLoginResponse | null>(null);
-
   const [favoritesState, setFavoritesState] = useState<FavoritesState>({status: "idle",});
-
   const [deletingFavoriteId, setDeletingFavoriteId] = useState<number | null>(null);
-
   const [favoriteActionError, setFavoriteActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,91 +107,99 @@ export default function App() {
   }
 
   return (
-    <main>
-      <h1>GitHub Repo Explorer</h1>
+    <>
+      <header className="app-header">
+        <h1>GitHub Repo Explorer</h1>
 
-      {session === null ? (
-        <>
-          <LoginForm onLogin={handleLogin} />
-          <RegisterForm />
-        </>
-      ) : (
-        <>
-          <section aria-label="Account">
+        {session !== null && (
+          <div className="app-header-account">
             <p>Signed in as {session.username}</p>
 
             <button type="button" onClick={handleLogout}>
               Log out
             </button>
-          </section>
+          </div>
+        )}
+      </header>
 
-          <section aria-labelledby="favorites-heading">
-            <h2 id="favorites-heading">Saved repositories</h2>
+      <main>
+        {session === null ? (
+          <>
+            <LoginForm onLogin={handleLogin} />
+            <RegisterForm />
+          </>
+        ) : (
+          <>
+            <RepositorySearch token={session.token} />
 
-            {favoriteActionError !== null && (
-              <p role="alert">{favoriteActionError}</p>
-            )}
+            <section aria-labelledby="favorites-heading">
+              <h2 id="favorites-heading">Saved repositories</h2>
 
-            {favoritesState.status === "loading" && (
-              <p role="status">Loading favorites...</p>
-            )}
-
-            {favoritesState.status === "error" && (
-              <p role="alert">{favoritesState.message}</p>
-            )}
-
-            {favoritesState.status === "success" &&
-              favoritesState.favorites.length === 0 && (
-                <p>You have not saved any repositories yet.</p>
+              {favoriteActionError !== null && (
+                <p role="alert">{favoriteActionError}</p>
               )}
 
-            {favoritesState.status === "success" &&
-              favoritesState.favorites.length > 0 && (
-                <ul>
-                  {favoritesState.favorites.map((favorite) => (
-                    <li key={favorite.id}>
-                      <article>
-                        <h3>
-                          <a
-                            href={favorite.url}
-                            target="_blank"
-                            rel="noreferrer"
+              {favoritesState.status === "loading" && (
+                <p role="status">Loading favorites...</p>
+              )}
+
+              {favoritesState.status === "error" && (
+                <p role="alert">{favoritesState.message}</p>
+              )}
+
+              {favoritesState.status === "success" &&
+                favoritesState.favorites.length === 0 && (
+                  <p>You have not saved any repositories yet.</p>
+                )}
+
+              {favoritesState.status === "success" &&
+                favoritesState.favorites.length > 0 && (
+                  <ul>
+                    {favoritesState.favorites.map((favorite) => (
+                      <li key={favorite.id}>
+                        <article>
+                          <h3>
+                            <a
+                              href={favorite.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {favorite.name}
+                            </a>
+                          </h3>
+
+                          {favorite.description !== null && (
+                            <p>{favorite.description}</p>
+                          )}
+
+                          <p>
+                            Stars: {favorite.starCount.toLocaleString()}
+                          </p>
+
+                          <p>
+                            Language: {favorite.language ?? "Not specified"}
+                          </p>
+
+                          <button
+                            type="button"
+                            disabled={deletingFavoriteId !== null}
+                            onClick={() =>
+                              void handleDeleteFavorite(favorite.id)
+                            }
                           >
-                            {favorite.name}
-                          </a>
-                        </h3>
-
-                        {favorite.description !== null && (
-                          <p>{favorite.description}</p>
-                        )}
-
-                        <p>
-                          Stars: {favorite.starCount.toLocaleString()}
-                        </p>
-
-                        <p>
-                          Language: {favorite.language ?? "Not specified"}
-                        </p>
-
-                        <button
-                          type="button"
-                          disabled={deletingFavoriteId !== null}
-                          onClick={() =>
-                            void handleDeleteFavorite(favorite.id)
-                          }
-                        >
-                          {deletingFavoriteId === favorite.id
-                            ? "Removing..."
-                            : "Remove"}
-                        </button>
-                      </article>
-                    </li>
-                  ))}
-                </ul>
-              )}
-          </section>
-        </>
-      )}
-    </main>
+                            {deletingFavoriteId === favorite.id
+                              ? "Removing..."
+                              : "Remove"}
+                          </button>
+                        </article>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+            </section>
+          </>
+        )}
+      </main>
+    </>
   );
 }

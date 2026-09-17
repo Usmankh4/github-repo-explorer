@@ -71,16 +71,10 @@ favoriteRouter.post("/", authenticateToken, async (request, response) => {
 
   const repoId = body.repoId.trim();
   const name = body.name.trim();
-  const description =
-    body.description === null || body.description.trim().length === 0
-      ? null
-      : body.description.trim();
+  const description = body.description === null || body.description.trim().length === 0 ? null : body.description.trim();
   const starCount = body.starCount;
   const url = body.url.trim();
-  const language =
-    body.language === null || body.language.trim().length === 0
-      ? null
-      : body.language.trim();
+  const language = body.language === null || body.language.trim().length === 0 ? null : body.language.trim();
 
   try {
     const parsedUrl = new URL(url);
