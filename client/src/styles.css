@@ -16,10 +16,53 @@ body {
   min-height: 100vh;
 }
 
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 12px 28px;
+  border-bottom: 1px solid #e5dfd6;
+  background: #faf8f4;
+}
+
+.app-header h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 400;
+  font-size: 1.25rem;
+  text-align: left;
+  margin: 0;
+}
+
+.app-header-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app-header-account p {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #2c2a28;
+}
+
+.app-header-account button {
+  align-self: auto;
+  flex-shrink: 0;
+  width: auto;
+  height: 32px;
+  margin-top: 0;
+  padding: 0 14px;
+}
+
 main {
   width: min(400px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 64px 0 80px;
+  padding: 40px 0 80px;
 }
 
 h1 {

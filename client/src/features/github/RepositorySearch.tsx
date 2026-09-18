@@ -1,29 +1,50 @@
 import { useState, type FormEvent } from "react";
 
 import {
+  createFavorite,
+  type Favorite,
+} from "../favorites/favoritesApi";
+import {
   searchRepositories,
   type RepositorySearchResult,
 } from "./githubApi";
 
 type RepositorySearchProps = {
   token: string;
+  canSave: boolean;
+  savedRepositoryIds: ReadonlySet<string>;
+  onFavoriteSaved: (favorite: Favorite) => void;
 };
 
 type RepositorySearchState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "success"; repositories: RepositorySearchResult[] }
+  | {
+      status: "success";
+      repositories: RepositorySearchResult[];
+    }
   | { status: "error"; message: string };
 
-export default function RepositorySearch({token}: RepositorySearchProps) {
+export default function RepositorySearch({token, canSave,savedRepositoryIds,onFavoriteSaved,}: RepositorySearchProps) {
+    const [query, setQuery] = useState("");
+    const [searchState, setSearchState] =
+    useState<RepositorySearchState>({ status: "idle",});
 
-  const [query, setQuery] = useState("");
-  const [searchState, setSearchState] = useState<RepositorySearchState>({ status: "idle"});
+  const [savingRepositoryId, setSavingRepositoryId] = useState<string | null>(null);
 
-  async function handleSubmit( event: FormEvent<HTMLFormElement>) {
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (searchState.status === "loading") {
+    const searchQuery = query.trim();
+
+    if (searchQuery.length === 0) {
+      setSearchState({
+        status: "error",
+        message: "Enter a repository search",
+      });
+
       return;
     }
 
@@ -31,8 +52,10 @@ export default function RepositorySearch({token}: RepositorySearchProps) {
       status: "loading",
     });
 
+    setSaveError(null);
+
     try {
-      const repositories = await searchRepositories(query, token);
+      const repositories = await searchRepositories(searchQuery,token);
 
       setSearchState({
         status: "success",
@@ -49,7 +72,31 @@ export default function RepositorySearch({token}: RepositorySearchProps) {
     }
   }
 
-  const isLoading = searchState.status === "loading";
+  async function handleSave(repository: RepositorySearchResult) {
+
+    const isAlreadySaved = savedRepositoryIds.has(repository.repoId);
+
+    if (!canSave || isAlreadySaved || savingRepositoryId !== null) {
+      return;
+    }
+
+    setSaveError(null);
+    setSavingRepositoryId(repository.repoId);
+
+    try {
+      const createdFavorite = await createFavorite(token, repository);
+
+      onFavoriteSaved(createdFavorite);
+    } catch (error: unknown) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Could not save repository",
+      );
+    } finally {
+      setSavingRepositoryId(null);
+    }
+  }
 
   return (
     <section aria-labelledby="repository-search-heading">
@@ -57,12 +104,9 @@ export default function RepositorySearch({token}: RepositorySearchProps) {
         Search GitHub repositories
       </h2>
 
-      <form
-        onSubmit={handleSubmit}
-        aria-busy={isLoading}
-      >
+      <form onSubmit={handleSearch}>
         <label htmlFor="repository-query">
-          Repository search
+          Repository name
         </label>
 
         <input
@@ -70,65 +114,101 @@ export default function RepositorySearch({token}: RepositorySearchProps) {
           name="query"
           type="search"
           value={query}
-          maxLength={256}
           required
-          disabled={isLoading}
-          autoComplete="off"
+          maxLength={256}
+          placeholder="Search for React, TypeScript..."
           onChange={(event) =>
             setQuery(event.currentTarget.value)
           }
         />
 
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Searching..." : "Search"}
+        <button
+          type="submit"
+          disabled={searchState.status === "loading"}
+        >
+          {searchState.status === "loading"
+            ? "Searching..."
+            : "Search"}
         </button>
       </form>
-
-      {searchState.status === "loading" && (
-        <p role="status">Searching GitHub...</p>
-      )}
 
       {searchState.status === "error" && (
         <p role="alert">{searchState.message}</p>
       )}
 
+      {saveError !== null && (
+        <p role="alert">{saveError}</p>
+      )}
+
       {searchState.status === "success" &&
         searchState.repositories.length === 0 && (
-          <p>No repositories matched your search.</p>
+          <p>No repositories found.</p>
         )}
 
       {searchState.status === "success" &&
         searchState.repositories.length > 0 && (
           <ul>
-            {searchState.repositories.map((repository) => (
-              <li key={repository.repoId}>
-                <article>
-                  <h3>
-                    <a
-                      href={repository.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {repository.name}
-                    </a>
-                  </h3>
+            {searchState.repositories.map(
+              (repository) => {
+                const isSaved =
+                  savedRepositoryIds.has(
+                    repository.repoId,
+                  );
 
-                  {repository.description !== null && (
-                    <p>{repository.description}</p>
-                  )}
+                const isSaving =
+                  savingRepositoryId ===
+                  repository.repoId;
 
-                  <p>
-                    Stars:{" "}
-                    {repository.starCount.toLocaleString()}
-                  </p>
+                return (
+                  <li key={repository.repoId}>
+                    <article>
+                      <h3>
+                        <a
+                          href={repository.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {repository.name}
+                        </a>
+                      </h3>
 
-                  <p>
-                    Language:{" "}
-                    {repository.language ?? "Not specified"}
-                  </p>
-                </article>
-              </li>
-            ))}
+                      {repository.description !== null && (
+                        <p>{repository.description}</p>
+                      )}
+
+                      <p>
+                        Stars:{" "}
+                        {repository.starCount.toLocaleString()}
+                      </p>
+
+                      <p>
+                        Language:{" "}
+                        {repository.language ??
+                          "Not specified"}
+                      </p>
+
+                      <button
+                        type="button"
+                        disabled={
+                          !canSave ||
+                          isSaved ||
+                          savingRepositoryId !== null
+                        }
+                        onClick={() =>
+                          void handleSave(repository)
+                        }
+                      >
+                        {isSaved
+                          ? "Saved"
+                          : isSaving
+                            ? "Saving..."
+                            : "Save"}
+                      </button>
+                    </article>
+                  </li>
+                );
+              },
+            )}
           </ul>
         )}
     </section>

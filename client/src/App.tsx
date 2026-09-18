@@ -3,25 +3,24 @@ import { useEffect, useState } from "react";
 import LoginForm from "./auth/LoginForm";
 import RegisterForm from "./auth/RegisterForm";
 import type { SuccessfulLoginResponse } from "./features/auth/authApi";
-import {deleteFavorite, getFavorites, type Favorite } from "./features/favorites/favoritesApi";
+import {deleteFavorite, getFavorites, type Favorite} from "./features/favorites/favoritesApi";
 import RepositorySearch from "./features/github/RepositorySearch";
 
-type FavoritesState = | { status: "idle" } | { status: "loading" } | { status: "success"; favorites: Favorite[] } | { status: "error"; message: string };
+type FavoritesState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; favorites: Favorite[] }
+  | { status: "error"; message: string };
 
 export default function App() {
-
-
   const [session, setSession] = useState<SuccessfulLoginResponse | null>(null);
-  const [favoritesState, setFavoritesState] = useState<FavoritesState>({status: "idle",});
+  const [favoritesState, setFavoritesState] = useState<FavoritesState>({ status: "idle"});
   const [deletingFavoriteId, setDeletingFavoriteId] = useState<number | null>(null);
   const [favoriteActionError, setFavoriteActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (session === null) {
-      setFavoritesState({
-        status: "idle",
-      });
-
+      setFavoritesState({status: "idle"});
       return;
     }
 
@@ -29,28 +28,17 @@ export default function App() {
     let cancelled = false;
 
     async function loadFavorites() {
-      setFavoritesState({
-        status: "loading",
-      });
+      setFavoritesState({ status: "loading"});
 
       try {
         const favorites = await getFavorites(token);
 
         if (!cancelled) {
-          setFavoritesState({
-            status: "success",
-            favorites,
-          });
+          setFavoritesState({ status: "success",favorites});
         }
       } catch (error: unknown) {
         if (!cancelled) {
-          setFavoritesState({
-            status: "error",
-            message:
-              error instanceof Error
-                ? error.message
-                : "Could not load favorites",
-          });
+          setFavoritesState({status: "error", message: error instanceof Error ? error.message : "Could not load favorites"});
         }
       }
     }
@@ -61,6 +49,30 @@ export default function App() {
       cancelled = true;
     };
   }, [session]);
+
+  const savedRepositoryIds = favoritesState.status === "success" ? new Set(favoritesState.favorites.map((favorite) => favorite.repoId)) : new Set<string>();
+
+  function handleFavoriteSaved(createdFavorite: Favorite) {
+    setFavoritesState((previousState) => {
+      if (previousState.status !== "success") {
+        return previousState;
+      }
+
+      const alreadyExists = previousState.favorites.some((favorite) => favorite.repoId === createdFavorite.repoId);
+
+      if (alreadyExists) {
+        return previousState;
+      }
+
+      return {
+        status: "success",
+        favorites: [
+          createdFavorite,
+          ...previousState.favorites,
+        ],
+      };
+    });
+  }
 
   async function handleDeleteFavorite(favoriteId: number) {
     if (session === null || deletingFavoriteId !== null) {
@@ -130,10 +142,12 @@ export default function App() {
           </>
         ) : (
           <>
-            <RepositorySearch token={session.token} />
+            <RepositorySearch token={session.token} canSave={favoritesState.status === "success"} savedRepositoryIds={savedRepositoryIds} onFavoriteSaved={handleFavoriteSaved}/>
 
             <section aria-labelledby="favorites-heading">
-              <h2 id="favorites-heading">Saved repositories</h2>
+              <h2 id="favorites-heading">
+                Saved repositories
+              </h2>
 
               {favoriteActionError !== null && (
                 <p role="alert">{favoriteActionError}</p>
@@ -144,56 +158,69 @@ export default function App() {
               )}
 
               {favoritesState.status === "error" && (
-                <p role="alert">{favoritesState.message}</p>
+                <p role="alert">
+                  {favoritesState.message}
+                </p>
               )}
 
               {favoritesState.status === "success" &&
                 favoritesState.favorites.length === 0 && (
-                  <p>You have not saved any repositories yet.</p>
+                  <p>
+                    You have not saved any repositories yet.
+                  </p>
                 )}
 
               {favoritesState.status === "success" &&
                 favoritesState.favorites.length > 0 && (
                   <ul>
-                    {favoritesState.favorites.map((favorite) => (
-                      <li key={favorite.id}>
-                        <article>
-                          <h3>
-                            <a
-                              href={favorite.url}
-                              target="_blank"
-                              rel="noreferrer"
+                    {favoritesState.favorites.map(
+                      (favorite) => (
+                        <li key={favorite.id}>
+                          <article>
+                            <h3>
+                              <a
+                                href={favorite.url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {favorite.name}
+                              </a>
+                            </h3>
+
+                            {favorite.description !== null && (
+                              <p>{favorite.description}</p>
+                            )}
+
+                            <p>
+                              Stars:{" "}
+                              {favorite.starCount.toLocaleString()}
+                            </p>
+
+                            <p>
+                              Language:{" "}
+                              {favorite.language ??
+                                "Not specified"}
+                            </p>
+
+                            <button
+                              type="button"
+                              disabled={
+                                deletingFavoriteId !== null
+                              }
+                              onClick={() =>
+                                void handleDeleteFavorite(
+                                  favorite.id,
+                                )
+                              }
                             >
-                              {favorite.name}
-                            </a>
-                          </h3>
-
-                          {favorite.description !== null && (
-                            <p>{favorite.description}</p>
-                          )}
-
-                          <p>
-                            Stars: {favorite.starCount.toLocaleString()}
-                          </p>
-
-                          <p>
-                            Language: {favorite.language ?? "Not specified"}
-                          </p>
-
-                          <button
-                            type="button"
-                            disabled={deletingFavoriteId !== null}
-                            onClick={() =>
-                              void handleDeleteFavorite(favorite.id)
-                            }
-                          >
-                            {deletingFavoriteId === favorite.id
-                              ? "Removing..."
-                              : "Remove"}
-                          </button>
-                        </article>
-                      </li>
-                    ))}
+                              {deletingFavoriteId === favorite.id
+                                ? "Removing..."
+                                : "Remove"}
+                            </button>
+                          </article>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 )}
             </section>

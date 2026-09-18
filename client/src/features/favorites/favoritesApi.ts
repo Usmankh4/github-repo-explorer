@@ -9,23 +9,25 @@ export type CreateFavoriteRequest ={
     language: string | null;
 }
 
-export type ApiError = {
-    message: string;
-  };
-
-  export function isApiError(data: unknown): data is ApiError {
-    return (
-      typeof data === "object" &&
-      data !== null &&
-      !Array.isArray(data) &&
-      "message" in data &&
-      typeof data.message === "string"
-    );
-  }
-
 export type Favorite = CreateFavoriteRequest & {
     id: number;
 }
+
+export type ApiError = {
+  message: string;
+};
+
+export function isApiError(data: unknown): data is ApiError {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    !Array.isArray(data) &&
+    "message" in data &&
+    typeof data.message === "string"
+  );
+}
+
+
 function isFavorite(data: unknown): data is Favorite {
     return (
       typeof data === "object" &&
@@ -50,6 +52,39 @@ function isFavorite(data: unknown): data is Favorite {
       "language" in data &&
       (typeof data.language === "string" || data.language === null)
     );
+  }
+
+
+  export async function createFavorite(token: string, favorite: CreateFavoriteRequest): Promise<Favorite> {
+    const response = await fetch(`${getApiBaseUrl()}/user/favorites`,{
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(favorite),
+      },
+    );
+
+    const data: unknown = await response.json();
+
+    if (!response.ok) {
+      if (isApiError(data)) {
+        throw new Error(data.message);
+      }
+
+      throw new Error(
+        `Request failed with status ${response.status}`,
+      );
+    }
+
+    if (!isFavorite(data)) {
+      throw new Error(
+        "Unexpected response shape from endpoint",
+      );
+    }
+
+    return data;
   }
 
   export async function getFavorites(token: string): Promise<Favorite[]> {
